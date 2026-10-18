@@ -13,6 +13,7 @@
 #include <QVariant>
 
 class QQuickItem;
+class QQmlEngine;
 
 namespace PlasmaQuick
 {
@@ -53,7 +54,8 @@ private:
     void updateSize();
 
     QPointer<QQuickItem> m_lastMainItem;
-    PlasmaQuick::SharedQmlEngine *m_qmlObject;
+    QQmlEngine *m_qmlEngine;
+    QPointer<QQuickItem> m_defaultItem;
     QTimer m_hideTimer;
     int m_hideTimeout;
     bool m_interactive;

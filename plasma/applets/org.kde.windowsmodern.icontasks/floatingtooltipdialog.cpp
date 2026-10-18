@@ -12,11 +12,11 @@
 #include <QQuickItem>
 
 #include <KWindowSystem>
-#include <PlasmaQuick/SharedQmlEngine>
+#include <QQmlComponent>
 
 FloatingToolTipDialog::FloatingToolTipDialog()
     : PopupPlasmaWindow(QStringLiteral("widgets/tooltip"))
-    , m_qmlObject(nullptr)
+    , m_qmlEngine(nullptr)
     , m_hideTimeout(-1)
     , m_interactive(false)
     , m_owner(nullptr)
@@ -68,15 +68,27 @@ void FloatingToolTipDialog::updateSize()
 
 QQuickItem *FloatingToolTipDialog::loadDefaultItem()
 {
-    if (!m_qmlObject) {
-        m_qmlObject = new PlasmaQuick::SharedQmlEngine(this);
+    if (!m_qmlEngine) {
+        m_qmlEngine = new QQmlEngine(this);
     }
 
-    if (!m_qmlObject->rootObject()) {
-        m_qmlObject->setSourceFromModule("org.kde.plasma.core", "DefaultToolTip");
+    if (!m_defaultItem) {
+        QQmlComponent component(m_qmlEngine, "org.kde.plasma.core", "DefaultToolTip", QQmlComponent::PreferSynchronous);
+        if (!component.isReady()) {
+            qWarning() << "FloatingToolTipDialog: failed to load DefaultToolTip:" << component.status() << component.errors();
+            return nullptr;
+        }
+        QObject *obj = component.create();
+        auto *item = qobject_cast<QQuickItem *>(obj);
+        if (!item) {
+            delete obj;
+            return nullptr;
+        }
+        item->setParent(this);
+        m_defaultItem = item;
     }
 
-    return qobject_cast<QQuickItem *>(m_qmlObject->rootObject());
+    return m_defaultItem;
 }
 
 void FloatingToolTipDialog::showEvent(QShowEvent *event)
